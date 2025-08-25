@@ -499,16 +499,16 @@ with scan_tab:
 
         with colA:
             st.markdown("**Item A**")
-            camA = st.camera_input("Use your camera (A)", key="camA")
+            # camA = st.camera_input("Use your camera (A)", key="camA")
             upA  = st.file_uploader("...or upload (A)", type=["png","jpg","jpeg"], key="upA")
-            srcA = camA or upA
-            # srcA = upA
+            # srcA = camA or upA
+            srcA = upA
         with colB:
             st.markdown("**Item B**")
-            camB = st.camera_input("Use your camera (B)", key="camB")
+            # camB = st.camera_input("Use your camera (B)", key="camB")
             upB  = st.file_uploader("...or upload (B)", type=["png","jpg","jpeg"], key="upB")
-            srcB = camB or upB
-            # srcB = upB
+            # srcB = camB or upB
+            srcB = upB
 
         def _process_compare(src, tag):
             if not src:
