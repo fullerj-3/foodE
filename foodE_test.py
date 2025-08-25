@@ -499,16 +499,16 @@ with scan_tab:
 
         with colA:
             st.markdown("**Item A**")
-            # camA = st.camera_input("Use your camera (A)", key="camA")
+            camA = st.camera_input("Use your camera (A)", key="camA")
             upA  = st.file_uploader("...or upload (A)", type=["png","jpg","jpeg"], key="upA")
-            # srcA = camA or upA
-            srcA = upA
+            srcA = camA or upA
+            # srcA = upA
         with colB:
             st.markdown("**Item B**")
-            # camB = st.camera_input("Use your camera (B)", key="camB")
+            camB = st.camera_input("Use your camera (B)", key="camB")
             upB  = st.file_uploader("...or upload (B)", type=["png","jpg","jpeg"], key="upB")
-            # srcB = camB or upB
-            srcB = upB
+            srcB = camB or upB
+            # srcB = upB
 
         def _process_compare(src, tag):
             if not src:
@@ -544,60 +544,120 @@ with scan_tab:
         with colB:
             infoB = _process_compare(srcB, "Item B")
 
+        # Top: images (side-by-side)
+        cA, cMid, cB = st.columns([1, 0.12, 1], vertical_alignment="top")
+        with cA:
+            if infoA.get("image"):
+                st.image(infoA["image"], use_container_width=True)
+        with cB:
+            if infoB.get("image"):
+                st.image(infoB["image"], use_container_width=True)
+
+
         _dbg(f"[compare] A present={infoA is not None} B present={infoB is not None}")
-        # ---- Side-by-side comparison block (sketch style) ----
-        if infoA and infoB:
-            st.markdown("---")
-            cA, cMid, cB = st.columns([1, 0.15, 1], vertical_alignment="top")
 
-            # Top: images + A/B badges + grade
-            with cA:
-                if infoA.get("image"): st.image(infoA["image"], use_container_width=True)
-                nutri_letter = (infoA["product"].get("nutriscore_grade") or "?").upper()
-                # st.markdown(f"<div style='display:inline-block;padding:2px 8px;border:2px solid #8b5cf6;border-radius:8px;font-weight:700;'>{nutri_letter}</div>",unsafe_allow_html=True)                
-                # st.markdown(f"<div style='margin-top:6px;font-size:14px;color:#6b7280;'>grade</div><div style='font-size:20px;font-weight:800'>{infoA['label']}</div>", unsafe_allow_html=True)
-            with cB:
-                if infoB.get("image"): st.image(infoB["image"], use_container_width=True)
-                nutri_letter = (infoB["product"].get("nutriscore_grade") or "?").upper()
-                # st.markdown(f"<div style='display:inline-block;padding:2px 8px;border:2px solid #8b5cf6;border-radius:8px;font-weight:700;'>{nutri_letter}</div>", unsafe_allow_html=True)                
-                # st.markdown(f"<div style='margin-top:6px;font-size:14px;color:#6b7280;'>grade</div><div style='font-size:20px;font-weight:800'>{infoB['label']}</div>", unsafe_allow_html=True)
-        
-            # Rows of metrics (now includes Grade and Nutri-Score)
-            labels = [("cal","kcal"), ("protein","g"), ("fat","g"), ("carb","g"), ("sug","g"), ("grade",""), ("nutriscore","")]
+        # Responsive styles for compare view
+        st.markdown("""
+        <style>
+        .compare-img { width: 100%; height: auto; max-height: 240px; object-fit: contain; border-radius: 10px; }
+        .compare-name { font-weight: 700; font-size: 16px; margin: 6px 0 2px; }
+        @media (max-width: 480px) {
+            .compare-img { max-height: 160px; }
+            .compare-name { font-size: 14px; }
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-            name_map = {
-                "cal": "calories", "protein": "protein", "fat": "fat",
-                "carb": "carb", "sug": "sugars", "grade": "grade",
-                "nutriscore": "nutri-score"
+        st.markdown("""
+            <style>
+            /* 3-column grid for A | label | B that stays straight on mobile */
+            .compare-grid {
+                display: grid;
+                grid-template-columns: 1fr 96px 1fr;
+                gap: 8px 10px;
+                align-items: center;
             }
+            .cmp-val { font-size: 20px; font-weight: 800; }
+            .cmp-val.right { text-align: right; }
+            .cmp-label { color: #6b7280; text-align: center; font-size: 14px; line-height: 1.2; }
+            .cmp-title { font-size: 16px; font-weight: 800; }
+            @media (max-width: 480px) {
+                .compare-grid { grid-template-columns: 1fr 72px 1fr; } /* narrower middle column */
+                .cmp-val { font-size: 18px; }
+                .cmp-label { font-size: 12px; }
+                .cmp-title { font-size: 15px; }
+                .compare-img { max-height: 150px; } /* you already set compare-img earlier */
+            }
+            </style>
+            """, unsafe_allow_html=True)
 
-            def _ns_text(info):
+        st.markdown("""
+            <style>
+            /* Tweak Streamlit images inside compare columns */
+            [data-testid="stImage"] img {
+            width: 100% !important;   /* fill the column width */
+            height: auto !important;  /* keep aspect ratio */
+            max-height: 240px;        /* cap desktop height */
+            object-fit: contain;
+            border-radius: 10px;
+            }
+            @media (max-width: 480px) {
+            [data-testid="stImage"] img {
+                max-height: 160px;      /* smaller cap on phones */
+            }
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+        # ---- Side-by-side comparison block (rows via CSS grid) ----
+        if infoA and infoB:
+            # Build rows: title, calories, protein, fat, carb, sugars, grade, nutri-score
+            def ns_text(info):
                 p = info.get("product") or {}
-                g = (p.get("nutriscore_grade") or p.get("nutrition_grade_fr") or "?").upper()
+                g = (p.get("nutriscore_grade") or p.get("nutrition_grade_fr") or "").upper()
                 s = p.get("nutriscore_score")
                 s_txt = f" ({int(s)})" if isinstance(s, (int, float)) else ""
-                return f"{g}{s_txt}" if g else ""
+                return f"{g}{s_txt}" if g else "UNKNOWN"
 
-            for key, unit in labels:
-                if key in ("cal","protein","fat","carb","sug"):
-                    a = infoA["summary"].get(key); b = infoB["summary"].get(key)
-                    aval = "" if a is None else (str(int(round(a))) if key=="cal" else f"{a:.1f}")
-                    bval = "" if b is None else (str(int(round(b))) if key=="cal" else f"{b:.1f}")
-                elif key == "grade":
-                    aval = infoA.get("label", "")
-                    bval = infoB.get("label", "")
-                else:  # nutriscore
-                    aval = _ns_text(infoA)
-                    bval = _ns_text(infoB)
+            def val_fmt(key, v):
+                if v is None: return ""
+                return str(int(round(v))) if key == "cal" else f"{v:.1f}"
 
-                row = st.columns([1, 0.2, 1])
-                with row[0]:
-                    st.markdown(f"<div style='font-size:20px;font-weight:800'>{aval}</div>", unsafe_allow_html=True)
-                with row[1]:
-                    st.markdown(f"<div style='text-align:center;color:#6b7280;font-size:14px;margin-top:6px'>{name_map.get(key,key)}</div>", unsafe_allow_html=True)
-                with row[2]:
-                    st.markdown(f"<div style='font-size:20px;font-weight:800;text-align:right'>{bval}</div>", unsafe_allow_html=True)
+            aS = infoA["summary"]; bS = infoB["summary"]
 
+            # Title row (product names)
+            rows_html = [
+                f"<div class='cmp-title'>{infoA.get('name','')}</div>"
+                f"<div class='cmp-label'>title</div>"
+                f"<div class='cmp-title right'>{infoB.get('name','')}</div>"
+            ]
+
+            # Data rows
+            spec = [("cal","calories"), ("protein","protein"), ("fat","fat"), ("carb","carb"), ("sug","sugars")]
+            for key, label in spec:
+                aval = val_fmt(key, aS.get(key))
+                bval = val_fmt(key, bS.get(key))
+                rows_html.append(
+                    f"<div class='cmp-val'>{aval}</div>"
+                    f"<div class='cmp-label'>{label}</div>"
+                    f"<div class='cmp-val right'>{bval}</div>"
+                )
+
+            # Grade row (your ✅/⚖️/❌ label)
+            rows_html.append(
+                f"<div class='cmp-val'>{infoA.get('label','')}</div>"
+                f"<div class='cmp-label'>grade</div>"
+                f"<div class='cmp-val right'>{infoB.get('label','')}</div>"
+            )
+
+            # Nutri-Score row (A–E + score)
+            rows_html.append(
+                f"<div class='cmp-val'>{ns_text(infoA)}</div>"
+                f"<div class='cmp-label'>nutri-score</div>"
+                f"<div class='cmp-val right'>{ns_text(infoB)}</div>"
+            )
+
+            st.markdown("<div class='compare-grid'>" + "".join(rows_html) + "</div>", unsafe_allow_html=True)
 
 
 with mass_tab:
