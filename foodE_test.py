@@ -547,11 +547,13 @@ with scan_tab:
         # Top: images (side-by-side)
         cA, cMid, cB = st.columns([1, 0.12, 1], vertical_alignment="top")
         with cA:
-            if infoA.get("image"):
-                st.image(infoA["image"], use_container_width=True)
+            if infoA:
+                if infoA.get("image"):
+                    st.image(infoA["image"], use_container_width=True)
         with cB:
-            if infoB.get("image"):
-                st.image(infoB["image"], use_container_width=True)
+            if infoB:
+                if infoB.get("image"):
+                    st.image(infoB["image"], use_container_width=True)
 
 
         _dbg(f"[compare] A present={infoA is not None} B present={infoB is not None}")
