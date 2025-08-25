@@ -10,7 +10,8 @@ import platform
 # App setup
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Food Scanner + 1‑Photo Mass Estimate", layout="wide")
-st.title("🍎 Food Scanner & Scale (1 Photo)")
+st.title("Food-E", width="stretch")
+st.write("Food Evaluation")
 st.caption("Scan a product barcode OR estimate portion mass from a single photo. Both show confidence.")
 
 # --- Optional CSS to style Calories font (affects only our custom 'kcal-*' blocks)
